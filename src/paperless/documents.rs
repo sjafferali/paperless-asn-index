@@ -11,10 +11,11 @@ pub struct Documents {
     pub results: Vec<Document>,
 }
 
+// src/paperless/documents.rs
 #[derive(Debug, Clone, Deserialize)]
 pub struct Document {
     pub id: u64,
-    pub correspondent: u64,
+    pub correspondent: Option<u64>, // Change to Option<u64>
     pub document_type: u64,
     pub storage_path: u64,
     pub title: String,
@@ -25,14 +26,6 @@ pub struct Document {
     pub modified: String,
     pub added: String,
     pub archive_serial_number: u64,
-    // original_file_name: String,
-    // archived_file_name: String,
-    // owner: u64,
-    // user_can_change: bool,
-    // is_shared_by_requester: bool,
-    // notes: Vec<String>,
-    // custom_fields: Vec<String>,
-    // __search_hit__: SearchHit,
 }
 
 #[derive(Debug, Deserialize)]
@@ -43,6 +36,7 @@ pub struct SearchHit {
     pub rank: u64,
 }
 
+// src/paperless/documents.rs
 pub fn group_documents(
     documents: Vec<Document>,
     correspondents: &HashMap<u64, String>,
@@ -57,7 +51,11 @@ pub fn group_documents(
         let key = match group_by {
             "ID" => document.id.to_string(),
             "ASN" => document.archive_serial_number.to_string(),
-            "Correspondent" => correspondents.get(&document.correspondent).unwrap_or(&"Unknown Correspondent".to_string()).clone(),
+            "Correspondent" => {
+                document.correspondent
+                    .and_then(|id| correspondents.get(&id).cloned())
+                    .unwrap_or_else(|| "Unknown Correspondent".to_string())
+            }
             "Title" => document.title.clone(),
             "Created Date" => document.created_date.clone(),
             _ => document.id.to_string(),
@@ -75,7 +73,9 @@ pub fn group_documents(
             "ID" => a.id.cmp(&b.id),
             "ASN" => a.archive_serial_number.cmp(&b.archive_serial_number),
             "Correspondent" => {
-                correspondents.get(&a.correspondent).unwrap_or(&"Unknown Correspondent".to_string()).cmp(&correspondents.get(&b.correspondent).unwrap_or(&"Unknown Correspondent".to_string()))
+                let a_corr = a.correspondent.and_then(|id| correspondents.get(&id)).unwrap_or(&"Unknown Correspondent".to_string());
+                let b_corr = b.correspondent.and_then(|id| correspondents.get(&id)).unwrap_or(&"Unknown Correspondent".to_string());
+                a_corr.cmp(b_corr)
             }
             "Title" => a.title.cmp(&b.title),
             "Created Date" => a.created_date.cmp(&b.created_date),
