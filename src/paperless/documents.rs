@@ -17,7 +17,7 @@ pub struct Document {
     pub id: u64,
     pub correspondent: Option<u64>, // Change to Option<u64>
     pub document_type: u64,
-    pub storage_path: u64,
+    pub storage_path: Option<u64>,
     pub title: String,
     pub content: String,
     pub tags: Vec<u64>,
