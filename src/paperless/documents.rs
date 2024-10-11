@@ -36,7 +36,6 @@ pub struct SearchHit {
     pub rank: u64,
 }
 
-// src/paperless/documents.rs
 pub fn group_documents(
     documents: Vec<Document>,
     correspondents: &HashMap<u64, String>,
@@ -45,6 +44,7 @@ pub fn group_documents(
     sort_desc: bool,
 ) -> HashMap<String, Vec<Document>> {
     let mut grouped_documents = HashMap::new();
+    let unknown_correspondent = "Unknown Correspondent".to_string();
 
     // Group documents
     for document in documents.iter() {
@@ -54,7 +54,7 @@ pub fn group_documents(
             "Correspondent" => {
                 document.correspondent
                     .and_then(|id| correspondents.get(&id).cloned())
-                    .unwrap_or_else(|| "Unknown Correspondent".to_string())
+                    .unwrap_or_else(|| unknown_correspondent.clone())
             }
             "Title" => document.title.clone(),
             "Created Date" => document.created_date.clone(),
@@ -73,8 +73,8 @@ pub fn group_documents(
             "ID" => a.id.cmp(&b.id),
             "ASN" => a.archive_serial_number.cmp(&b.archive_serial_number),
             "Correspondent" => {
-                let a_corr = a.correspondent.and_then(|id| correspondents.get(&id)).unwrap_or(&"Unknown Correspondent".to_string());
-                let b_corr = b.correspondent.and_then(|id| correspondents.get(&id)).unwrap_or(&"Unknown Correspondent".to_string());
+                let a_corr = a.correspondent.and_then(|id| correspondents.get(&id)).unwrap_or(&unknown_correspondent);
+                let b_corr = b.correspondent.and_then(|id| correspondents.get(&id)).unwrap_or(&unknown_correspondent);
                 a_corr.cmp(b_corr)
             }
             "Title" => a.title.cmp(&b.title),

@@ -185,7 +185,11 @@ async fn show_index(form: web::Json<ShowIndexFormData>) -> Result<Markup> {
                                             @match field.as_str() {
                                                 "ID" => { (document.id) }
                                                 "ASN" => { (document.archive_serial_number) }
-                                                "Correspondent" => { (correspondents_map[&document.correspondent]) }
+                                                "Correspondent" => {
+                                                    (document.correspondent
+                                                        .and_then(|id| correspondents_map.get(&id))
+                                                        .unwrap_or(&"Unknown Correspondent".to_string()))
+                                                }
                                                 "Title" => { (document.title) }
                                                 "Tags" => { (document.tags.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", ")) }
                                                 "Created Date" => { (document.created_date) }
