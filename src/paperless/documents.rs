@@ -57,7 +57,7 @@ pub fn group_documents(
         let key = match group_by {
             "ID" => document.id.to_string(),
             "ASN" => document.archive_serial_number.to_string(),
-            "Correspondent" => correspondents[&document.correspondent].clone(),
+            "Correspondent" => correspondents.get(&document.correspondent).unwrap_or(&"Unknown Correspondent".to_string()).clone(),
             "Title" => document.title.clone(),
             "Created Date" => document.created_date.clone(),
             _ => document.id.to_string(),
@@ -75,7 +75,7 @@ pub fn group_documents(
             "ID" => a.id.cmp(&b.id),
             "ASN" => a.archive_serial_number.cmp(&b.archive_serial_number),
             "Correspondent" => {
-                correspondents[&a.correspondent].cmp(&correspondents[&b.correspondent])
+                correspondents.get(&a.correspondent).unwrap_or(&"Unknown Correspondent".to_string()).cmp(&correspondents.get(&b.correspondent).unwrap_or(&"Unknown Correspondent".to_string()))
             }
             "Title" => a.title.cmp(&b.title),
             "Created Date" => a.created_date.cmp(&b.created_date),
