@@ -66,7 +66,7 @@ pub async fn get_documents(
     client: &Client,
 ) -> Result<Vec<Document>> {
     let mut next = Some(format!(
-        "{}/documents/?query=asn:[{} TO {}]",
+        "{}/documents/?archive_serial_number__gte={}&archive_serial_number__lte={}",
         paperless_url, asn_from, asn_to
     ));
     let mut documents = Vec::new();
