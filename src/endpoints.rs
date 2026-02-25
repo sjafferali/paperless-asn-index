@@ -1,11 +1,9 @@
-use std::collections::HashMap;
-
-use actix_web::{get, post, web, App, HttpServer, Result};
+use actix_web::{get, post, web, Result};
 use maud::{html, Markup};
 use serde::Deserialize;
 
 use crate::paperless::{
-    documents::{self, group_documents},
+    documents::sort_documents,
     get_correspondents, get_documents,
 };
 
@@ -16,7 +14,6 @@ struct ShowIndexFormData {
     pub asn_from: String,
     pub asn_to: String,
     pub show_fields: Vec<String>,
-    pub group_by: String,
     pub sort_by: String,
     pub sort_desc: bool,
 }
@@ -84,19 +81,6 @@ async fn site() -> Result<Markup> {
 
                                 div class="column" {
                                     div class="field" {
-                                        label class="label" { "Group by" }
-                                        div class="select" {
-                                            select id="group_by" {
-                                                option value="ID" { "ID" }
-                                                option value="ASN" { "ASN" }
-                                                option value="Correspondent" { "Correspondent" }
-                                                option value="Title" { "Title" }
-                                                option value="Created Date" { "Created Date" }
-                                            }
-                                        }
-                                    }
-
-                                    div class="field" {
                                         label class="label" { "Sort by" }
                                         div class="select" {
                                             select id="sort_by" {
@@ -145,17 +129,12 @@ async fn show_index(form: web::Json<ShowIndexFormData>) -> Result<Markup> {
         &client,
     )
     .await?;
-    let grouped_documents = group_documents(
+    let sorted_documents = sort_documents(
         documents,
         &correspondents_map,
-        &form.group_by,
         &form.sort_by,
         form.sort_desc,
     );
-
-    // Get sorted list of groups
-    let mut groups: Vec<&String> = grouped_documents.keys().collect();
-    groups.sort();
 
     // Render table
     Ok(html! {
@@ -174,27 +153,22 @@ async fn show_index(form: web::Json<ShowIndexFormData>) -> Result<Markup> {
                         }
                     }
                     tbody {
-                        @for group in groups {
+                        @for document in &sorted_documents {
                             tr {
-                                th colspan=(form.show_fields.len()) { (group) }
-                            }
-                            @for document in grouped_documents[group].iter() {
-                                tr {
-                                    @for field in &form.show_fields {
-                                        td {
-                                            @match field.as_str() {
-                                                "ID" => { (document.id) }
-                                                "ASN" => { (document.archive_serial_number) }
-                                                "Correspondent" => {
-                                                    (document.correspondent
-                                                        .and_then(|id| correspondents_map.get(&id))
-                                                        .unwrap_or(&"Unknown Correspondent".to_string()))
-                                                }
-                                                "Title" => { (document.title) }
-                                                "Tags" => { (document.tags.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", ")) }
-                                                "Created Date" => { (document.created_date) }
-                                                _ => { "" }
+                                @for field in &form.show_fields {
+                                    td {
+                                        @match field.as_str() {
+                                            "ID" => { (document.id) }
+                                            "ASN" => { (document.archive_serial_number) }
+                                            "Correspondent" => {
+                                                (document.correspondent
+                                                    .and_then(|id| correspondents_map.get(&id))
+                                                    .unwrap_or(&"Unknown Correspondent".to_string()))
                                             }
+                                            "Title" => { (document.title) }
+                                            "Tags" => { (document.tags.iter().map(|x| x.to_string()).collect::<Vec<_>>().join(", ")) }
+                                            "Created Date" => { (document.created_date) }
+                                            _ => { "" }
                                         }
                                     }
                                 }
